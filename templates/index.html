@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Siber Güvenlik Trafik Analizi</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <style>
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: #0f172a;
+        color: #e2e8f0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        min-height: 100vh;
+        padding: 2rem;
+      }
+      h1 {
+        margin-bottom: 1rem;
+        color: #38bdf8;
+        font-size: 2.5rem;
+      }
+      .upload-container {
+        background: #1e293b;
+        padding: 2rem;
+        border-radius: 1rem;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        max-width: 600px;
+        width: 100%;
+      }
+      input[type="file"] {
+        background: #0f172a;
+        color: #e2e8f0;
+        border: 1px solid #334155;
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        width: 100%;
+      }
+      button {
+        background: #38bdf8;
+        color: #0f172a;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        margin-top: 1rem;
+        font-size: 1rem;
+        cursor: pointer;
+        width: 100%;
+      }
+      pre {
+        background: #1e293b;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-top: 2rem;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <h1><i class="fas fa-shield-alt"></i> Siber Güvenlik Trafik Analizi</h1>
+    <div class="upload-container">
+      <form id="uploadForm">
+        <input
+          type="file"
+          name="file"
+          id="fileInput"
+          accept=".pcap,.pcapng"
+          required
+        />
+        <button type="submit">Analiz Et</button>
+      </form>
+      <pre id="output"></pre>
+    </div>
+
+    <script>
+      document
+        .getElementById("uploadForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+          const fileInput = document.getElementById("fileInput");
+          const output = document.getElementById("output");
+          const formData = new FormData();
+          formData.append("file", fileInput.files[0]);
+
+          const response = await fetch("/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await response.json();
+
+          if (data.error) {
+            output.textContent = "Hata: " + data.error;
+            return;
+          }
+
+          let result = `📁 Dosya: ${data.file}\n📦 Paket Sayısı: ${data.total_packets}\n\n🛡️ Yorum:\n${data.llm_commentary}`;
+
+          if (data.alerts.length > 0) {
+            result += `\n\n⚠️ Tespit Edilen Saldırılar:`;
+            data.alerts.forEach((alert, i) => {
+              result += `\n${i + 1}. Tür: ${alert.type}\n   Kaynak IP: ${
+                alert.src_ip
+              }\n   Hedef IP: ${alert.dst_ip}\n   Açıklama: ${
+                alert.description
+              }\n`;
+            });
+          }
+
+          output.textContent = result;
+        });
+    </script>
+  </body>
+</html>
